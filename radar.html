@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>FazerCriar Radar — conexão</title>
+<style>
+  :root { --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #5d6676; --line: #dfe3ea; --accent: #e8590c; --ok: #2b8a3e; --err: #c92a2a; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #14171c; --card: #1d2129; --text: #e9ecf1; --muted: #9aa3b2; --line: #2e3440; --accent: #ff7a2e; --ok: #51cf66; --err: #ff6b6b; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .card { width: 100%; max-width: 560px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  h1 span { color: var(--accent); }
+  p { margin: 8px 0; color: var(--muted); }
+  .st { font-weight: 600; color: var(--text); }
+  .ok { color: var(--ok); } .err { color: var(--err); }
+  textarea { width: 100%; height: 84px; margin: 8px 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: 12px/1.4 ui-monospace, Consolas, monospace; resize: none; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  a.btn, button { display: inline-block; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+  a.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="card">
+  <h1><span>FazerCriar</span> Radar</h1>
+
+  <section id="idle">
+    <p>Esta página conclui a conexão do FazerCriar Radar com o Mercado Livre. Ela é aberta automaticamente pelo Mercado Livre depois da autorização.</p>
+  </section>
+
+  <section id="got" hidden>
+    <p class="st ok">Autorização recebida. Enviando para o Radar no seu computador…</p>
+    <p>Se nada acontecer em alguns segundos, verifique se o FazerCriar OS está aberto e clique em “Enviar para o Radar”. Ou copie o endereço abaixo e cole em Radar → Configurações → “Colar código / URL de retorno”.</p>
+    <textarea id="url" readonly></textarea>
+    <div class="row">
+      <a class="btn primary" id="send" href="#">Enviar para o Radar</a>
+      <button id="copy" type="button">Copiar endereço</button>
+    </div>
+    <p>O código vale poucos minutos e só funciona junto com o Client Secret, que fica no seu computador.</p>
+  </section>
+
+  <section id="fail" hidden>
+    <p class="st err">O Mercado Livre não autorizou a conexão.</p>
+    <p id="reason"></p>
+    <p>Volte ao Radar → Configurações e tente conectar novamente.</p>
+  </section>
+</main>
+<script>
+  // Endereço do FazerCriar OS no computador. Mude a porta aqui se o sistema rodar em outra.
+  var RADAR = 'http://localhost:3000/api/radar/ml/callback';
+  var q = new URLSearchParams(location.search);
+  var show = function (id) { ['idle', 'got', 'fail'].forEach(function (s) { document.getElementById(s).hidden = s !== id; }); };
+
+  if (q.get('code')) {
+    show('got');
+    var full = location.href;
+    var target = RADAR + location.search;
+    document.getElementById('url').value = full;
+    document.getElementById('send').href = target;
+    document.getElementById('copy').onclick = function () {
+      var t = document.getElementById('url');
+      t.select();
+      (navigator.clipboard ? navigator.clipboard.writeText(full) : Promise.reject()).catch(function () { document.execCommand('copy'); });
+      this.textContent = 'Copiado';
+    };
+    setTimeout(function () { location.href = target; }, 800);
+  } else if (q.get('error')) {
+    show('fail');
+    document.getElementById('reason').textContent = q.get('error_description') || q.get('error');
+  }
+</script>
+</body>
+</html>
